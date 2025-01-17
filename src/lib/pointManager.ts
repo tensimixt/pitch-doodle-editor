@@ -16,7 +16,6 @@ export const createPointSprite = (app: PIXI.Application, x: number, y: number): 
   circle.drawCircle(0, 0, 6);
   circle.endFill();
   
-  // Use render texture instead of generateTexture
   const renderTexture = PIXI.RenderTexture.create({
     width: 12,
     height: 12,
