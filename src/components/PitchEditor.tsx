@@ -1,8 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import * as PIXI from 'pixi.js';
-import { calculateCurvePoints } from '@/lib/pitchUtils';
-import { setupCanvas, createPixiApp } from '@/lib/canvasSetup';
-import { Point, createPointSprite } from '@/lib/pointManager';
+import { useEffect } from 'react';
+import { usePitchEditor } from '@/hooks/usePitchEditor';
 
 interface PitchEditorProps {
   width: number;
@@ -10,96 +7,22 @@ interface PitchEditorProps {
 }
 
 const PitchEditor = ({ width, height }: PitchEditorProps) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const appRef = useRef<PIXI.Application | null>(null);
-  const pointsRef = useRef<Point[]>([]);
-  const lineGraphicsRef = useRef<PIXI.Graphics | null>(null);
-  const gridGraphicsRef = useRef<PIXI.Graphics | null>(null);
-  const isDraggingRef = useRef<boolean>(false);
-  const selectedPointRef = useRef<Point | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  const drawGrid = () => {
-    if (!gridGraphicsRef.current) return;
-
-    const graphics = gridGraphicsRef.current;
-    graphics.clear();
-    graphics.lineStyle(1, 0x374151, 0.3);
-
-    for (let x = 0; x <= width; x += 50) {
-      graphics.moveTo(x, 0);
-      graphics.lineTo(x, height);
-    }
-
-    for (let y = 0; y <= height; y += 50) {
-      graphics.moveTo(0, y);
-      graphics.lineTo(width, y);
-    }
-  };
-
-  const drawCurve = () => {
-    if (!lineGraphicsRef.current || pointsRef.current.length < 2) return;
-
-    const graphics = lineGraphicsRef.current;
-    graphics.clear();
-    graphics.lineStyle(2, 0x3B82F6);
-
-    const points = pointsRef.current;
-    const curvePoints = calculateCurvePoints(points);
-
-    graphics.moveTo(curvePoints[0].x, curvePoints[0].y);
-    for (let i = 1; i < curvePoints.length; i++) {
-      graphics.lineTo(curvePoints[i].x, curvePoints[i].y);
-    }
-  };
-
-  const createPoint = (x: number, y: number) => {
-    if (!appRef.current || !isInitialized) return;
-
-    try {
-      const point = createPointSprite(appRef.current, x, y);
-      pointsRef.current.push(point);
-      pointsRef.current.sort((a, b) => a.x - b.x);
-      drawCurve();
-      return point;
-    } catch (error) {
-      console.error('Error creating point:', error);
-      return null;
-    }
-  };
+  const {
+    containerRef,
+    canvasRef,
+    isInitialized,
+    createPoint,
+    isDraggingRef,
+    selectedPointRef,
+    pointsRef,
+    drawCurve
+  } = usePitchEditor({ width, height });
 
   useEffect(() => {
-    if (!containerRef.current) return;
-
-    const canvas = setupCanvas(width, height);
-    canvasRef.current = canvas;
-    containerRef.current.appendChild(canvas);
-
-    const app = createPixiApp(canvas);
-    appRef.current = app;
-
-    // Wait for the next frame to ensure PIXI is fully initialized
-    requestAnimationFrame(() => {
-      const lineGraphics = new PIXI.Graphics();
-      const gridGraphics = new PIXI.Graphics();
-      app.stage.addChild(gridGraphics);
-      app.stage.addChild(lineGraphics);
-      lineGraphicsRef.current = lineGraphics;
-      gridGraphicsRef.current = gridGraphics;
-
-      drawGrid();
-      setIsInitialized(true);
-
-      // Create initial points after initialization
-      createPoint(50, height / 2);
-      createPoint(width - 50, height / 2);
-    });
+    if (!canvasRef.current || !isInitialized) return;
 
     const handleMouseDown = (event: MouseEvent) => {
-      if (!canvasRef.current) return;
-
-      const rect = canvasRef.current.getBoundingClientRect();
+      const rect = canvasRef.current!.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
 
@@ -140,52 +63,18 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
       selectedPointRef.current = null;
     };
 
-    canvas.addEventListener('mousedown', handleMouseDown);
-    canvas.addEventListener('mousemove', handleMouseMove);
-    canvas.addEventListener('mouseup', handleMouseUp);
+    canvasRef.current.addEventListener('mousedown', handleMouseDown);
+    canvasRef.current.addEventListener('mousemove', handleMouseMove);
+    canvasRef.current.addEventListener('mouseup', handleMouseUp);
 
     return () => {
-      if (canvas) {
-        canvas.removeEventListener('mousedown', handleMouseDown);
-        canvas.removeEventListener('mousemove', handleMouseMove);
-        canvas.removeEventListener('mouseup', handleMouseUp);
-      }
-
-      pointsRef.current.forEach(point => {
-        if (point.sprite && point.sprite.parent) {
-          point.sprite.parent.removeChild(point.sprite);
-          point.sprite.destroy();
-        }
-      });
-      pointsRef.current = [];
-
-      if (lineGraphicsRef.current?.parent) {
-        lineGraphicsRef.current.parent.removeChild(lineGraphicsRef.current);
-        lineGraphicsRef.current.destroy();
-        lineGraphicsRef.current = null;
-      }
-
-      if (gridGraphicsRef.current?.parent) {
-        gridGraphicsRef.current.parent.removeChild(gridGraphicsRef.current);
-        gridGraphicsRef.current.destroy();
-        gridGraphicsRef.current = null;
-      }
-
-      if (appRef.current) {
-        try {
-          appRef.current.destroy(true);
-        } catch (error) {
-          console.error('Error during PIXI application cleanup:', error);
-        }
-        appRef.current = null;
-      }
-
-      if (canvasRef.current && containerRef.current) {
-        containerRef.current.removeChild(canvasRef.current);
-        canvasRef.current = null;
+      if (canvasRef.current) {
+        canvasRef.current.removeEventListener('mousedown', handleMouseDown);
+        canvasRef.current.removeEventListener('mousemove', handleMouseMove);
+        canvasRef.current.removeEventListener('mouseup', handleMouseUp);
       }
     };
-  }, [width, height]);
+  }, [width, height, isInitialized, createPoint, drawCurve]);
 
   return <div ref={containerRef} className="rounded-lg overflow-hidden border border-gray-700" />;
 };

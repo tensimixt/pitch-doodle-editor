@@ -22,7 +22,7 @@ export const createPointSprite = (app: PIXI.Application, x: number, y: number): 
     resolution: window.devicePixelRatio || 1
   });
   
-  app.renderer.render(circle, { renderTexture });
+  app.renderer.render({ container: circle, target: renderTexture });
   const sprite = new PIXI.Sprite(renderTexture);
   
   sprite.anchor.set(0.5);
