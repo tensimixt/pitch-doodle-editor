@@ -89,25 +89,25 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
       // Clean up PIXI resources in reverse order of creation
       if (pointsRef.current) {
         pointsRef.current.forEach(point => {
-          if (point.sprite && !point.sprite.destroyed) {
+          if (point.sprite) {
             point.sprite.destroy();
           }
         });
         pointsRef.current = [];
       }
 
-      if (lineGraphicsRef.current && !lineGraphicsRef.current.destroyed) {
+      if (lineGraphicsRef.current) {
         lineGraphicsRef.current.destroy();
         lineGraphicsRef.current = null;
       }
 
-      if (gridGraphicsRef.current && !gridGraphicsRef.current.destroyed) {
+      if (gridGraphicsRef.current) {
         gridGraphicsRef.current.destroy();
         gridGraphicsRef.current = null;
       }
 
       // Destroy the PIXI application last
-      if (appRef.current && !appRef.current.destroyed) {
+      if (appRef.current) {
         appRef.current.destroy(true, { children: true, texture: true });
         appRef.current = null;
       }
