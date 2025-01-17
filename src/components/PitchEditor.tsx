@@ -44,11 +44,11 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
       autoDensity: true,
     });
 
+    // Append canvas to container before storing app reference
+    containerRef.current.appendChild(canvas);
+
     // Store app reference
     appRef.current = app;
-
-    // Append canvas to container
-    containerRef.current.appendChild(canvas);
 
     // Create graphics for lines and grid
     const lineGraphics = new PIXI.Graphics();
@@ -66,16 +66,13 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
 
     // Cleanup function
     return () => {
-      if (app && app.view) {
-        app.view.removeEventListener('mousedown', handleMouseDown);
-        app.view.removeEventListener('mousemove', handleMouseMove);
-        app.view.removeEventListener('mouseup', handleMouseUp);
-        if (containerRef.current && containerRef.current.contains(app.view)) {
-          containerRef.current.removeChild(app.view);
+      if (app) {
+        if (containerRef.current && canvas.parentNode === containerRef.current) {
+          containerRef.current.removeChild(canvas);
         }
+        app.destroy(true, { children: true });
+        appRef.current = null;
       }
-      app.destroy(true, { children: true });
-      appRef.current = null;
     };
   }, [width, height]);
 
@@ -144,26 +141,28 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
     }
   };
 
-  // Add event listeners and initial points after initialization
   useEffect(() => {
     const app = appRef.current;
     if (!isInitialized || !app || !app.view) return;
 
-    const view = app.view;
-    view.addEventListener('mousedown', handleMouseDown);
-    view.addEventListener('mousemove', handleMouseMove);
-    view.addEventListener('mouseup', handleMouseUp);
+    const canvas = app.view as HTMLCanvasElement;
+    
+    const handleMouseDownWrapper = (e: MouseEvent) => handleMouseDown(e);
+    const handleMouseMoveWrapper = (e: MouseEvent) => handleMouseMove(e);
+    const handleMouseUpWrapper = (e: MouseEvent) => handleMouseUp();
+
+    canvas.addEventListener('mousedown', handleMouseDownWrapper);
+    canvas.addEventListener('mousemove', handleMouseMoveWrapper);
+    canvas.addEventListener('mouseup', handleMouseUpWrapper);
 
     // Create initial points after initialization
     createPoint(50, height / 2);
     createPoint(width - 50, height / 2);
 
     return () => {
-      if (view) {
-        view.removeEventListener('mousedown', handleMouseDown);
-        view.removeEventListener('mousemove', handleMouseMove);
-        view.removeEventListener('mouseup', handleMouseUp);
-      }
+      canvas.removeEventListener('mousedown', handleMouseDownWrapper);
+      canvas.removeEventListener('mousemove', handleMouseMoveWrapper);
+      canvas.removeEventListener('mouseup', handleMouseUpWrapper);
     };
   }, [isInitialized, height, width]);
 
