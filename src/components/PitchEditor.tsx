@@ -66,6 +66,10 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
     // Set initialization flag
     setIsInitialized(true);
 
+    // Create initial points after initialization
+    createPoint(50, height / 2);
+    createPoint(width - 50, height / 2);
+
     // Cleanup function
     return () => {
       if (appRef.current) {
@@ -158,10 +162,6 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
     canvas.addEventListener('mousemove', handleMouseMoveWrapper);
     canvas.addEventListener('mouseup', handleMouseUpWrapper);
 
-    // Create initial points after initialization
-    createPoint(50, height / 2);
-    createPoint(width - 50, height / 2);
-
     return () => {
       if (canvas) {
         canvas.removeEventListener('mousedown', handleMouseDownWrapper);
@@ -169,7 +169,7 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
         canvas.removeEventListener('mouseup', handleMouseUpWrapper);
       }
     };
-  }, [isInitialized, height, width]);
+  }, [isInitialized]);
 
   const handleMouseDown = (event: MouseEvent) => {
     if (!appRef.current || !appRef.current.view || !isInitialized) return;
