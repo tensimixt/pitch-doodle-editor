@@ -97,7 +97,8 @@ export const usePitchEditor = ({ width, height }: UsePitchEditorProps) => {
     const app = createPixiApp(canvas);
     appRef.current = app;
 
-    app.renderer.on('render', () => {
+    // Use requestAnimationFrame to ensure PIXI is ready
+    requestAnimationFrame(() => {
       if (!isInitialized) {
         initialize();
       }
