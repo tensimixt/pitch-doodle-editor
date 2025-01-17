@@ -26,20 +26,22 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Create canvas element first
+    // Create and configure canvas first
     const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    canvas.width = width * window.devicePixelRatio;
+    canvas.height = height * window.devicePixelRatio;
 
     // Initialize PIXI Application with the canvas
     const app = new PIXI.Application({
-      width,
-      height,
+      width: canvas.width,
+      height: canvas.height,
       backgroundColor: 0x1F2937,
       antialias: true,
+      view: canvas,
       resolution: window.devicePixelRatio || 1,
       autoDensity: true,
-      view: canvas,
     });
 
     // Store app reference
@@ -68,8 +70,8 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
         app.view.removeEventListener('mousedown', handleMouseDown);
         app.view.removeEventListener('mousemove', handleMouseMove);
         app.view.removeEventListener('mouseup', handleMouseUp);
+        containerRef.current?.removeChild(app.view);
       }
-      
       app.destroy(true, { children: true });
       appRef.current = null;
     };
@@ -77,11 +79,9 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
 
   // Add event listeners and initial points after initialization
   useEffect(() => {
-    if (!isInitialized || !appRef.current) return;
+    if (!isInitialized || !appRef.current || !appRef.current.view) return;
 
     const view = appRef.current.view;
-    if (!view) return;
-
     view.addEventListener('mousedown', handleMouseDown);
     view.addEventListener('mousemove', handleMouseMove);
     view.addEventListener('mouseup', handleMouseUp);
