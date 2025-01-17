@@ -25,15 +25,18 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Create PixiJS application
+    // Create PixiJS application with proper initialization
     const app = new PIXI.Application({
       width,
       height,
       backgroundColor: 0x1F2937,
       antialias: true,
+      resolution: window.devicePixelRatio || 1,
     });
 
-    containerRef.current.appendChild(app.view as unknown as Node);
+    // Properly append the canvas element
+    const canvas = app.view as HTMLCanvasElement;
+    containerRef.current.appendChild(canvas);
     appRef.current = app;
 
     // Create graphics for lines and grid
@@ -48,15 +51,19 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
     drawGrid();
 
     // Event listeners
-    app.view.addEventListener('mousedown', handleMouseDown);
-    app.view.addEventListener('mousemove', handleMouseMove);
-    app.view.addEventListener('mouseup', handleMouseUp);
+    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseup', handleMouseUp);
 
+    // Cleanup function
     return () => {
+      canvas.removeEventListener('mousedown', handleMouseDown);
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('mouseup', handleMouseUp);
       app.destroy(true);
-      app.view.removeEventListener('mousedown', handleMouseDown);
-      app.view.removeEventListener('mousemove', handleMouseMove);
-      app.view.removeEventListener('mouseup', handleMouseUp);
+      if (containerRef.current && canvas.parentNode === containerRef.current) {
+        containerRef.current.removeChild(canvas);
+      }
     };
   }, [width, height]);
 
