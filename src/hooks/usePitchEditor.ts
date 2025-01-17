@@ -108,6 +108,7 @@ export const usePitchEditor = ({ width, height }: UsePitchEditorProps) => {
     });
 
     return () => {
+      // Clean up points first
       pointsRef.current.forEach(point => {
         if (point.sprite && point.sprite.parent) {
           point.sprite.parent.removeChild(point.sprite);
@@ -116,6 +117,7 @@ export const usePitchEditor = ({ width, height }: UsePitchEditorProps) => {
       });
       pointsRef.current = [];
 
+      // Clean up graphics
       if (lineGraphicsRef.current?.parent) {
         lineGraphicsRef.current.parent.removeChild(lineGraphicsRef.current);
         lineGraphicsRef.current.destroy();
@@ -128,11 +130,21 @@ export const usePitchEditor = ({ width, height }: UsePitchEditorProps) => {
         gridGraphicsRef.current = null;
       }
 
+      // Clean up PIXI application
       if (appRef.current) {
-        appRef.current.destroy(true);
+        const app = appRef.current;
+        if (app.stage) {
+          while (app.stage.children.length > 0) {
+            const child = app.stage.children[0];
+            app.stage.removeChild(child);
+            child.destroy();
+          }
+        }
+        app.destroy(true, { children: true, texture: true, baseTexture: true });
         appRef.current = null;
       }
 
+      // Clean up canvas
       if (canvasRef.current && containerRef.current) {
         containerRef.current.removeChild(canvasRef.current);
         canvasRef.current = null;
