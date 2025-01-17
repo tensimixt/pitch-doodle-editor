@@ -56,30 +56,24 @@ export const usePitchEditor = ({ width, height }: UsePitchEditorProps) => {
   }, []);
 
   const createPoint = useCallback((x: number, y: number) => {
-    if (!appRef.current) {
-      console.error('PIXI Application not initialized');
-      return null;
-    }
+    if (!appRef.current) return null;
 
-    try {
-      const point = createPointSprite(appRef.current, x, y);
-      pointsRef.current.push(point);
-      pointsRef.current.sort((a, b) => a.x - b.x);
-      drawCurve();
-      return point;
-    } catch (error) {
-      console.error('Error creating point:', error);
-      return null;
-    }
+    const point = createPointSprite(appRef.current, x, y);
+    pointsRef.current.push(point);
+    pointsRef.current.sort((a, b) => a.x - b.x);
+    drawCurve();
+    return point;
   }, [drawCurve]);
 
-  const initializeGraphics = useCallback(() => {
+  const initialize = useCallback(() => {
     if (!appRef.current || isInitialized) return;
 
     const lineGraphics = new PIXI.Graphics();
     const gridGraphics = new PIXI.Graphics();
+    
     appRef.current.stage.addChild(gridGraphics);
     appRef.current.stage.addChild(lineGraphics);
+    
     lineGraphicsRef.current = lineGraphics;
     gridGraphicsRef.current = gridGraphics;
 
@@ -103,8 +97,11 @@ export const usePitchEditor = ({ width, height }: UsePitchEditorProps) => {
     const app = createPixiApp(canvas);
     appRef.current = app;
 
-    // Use requestAnimationFrame to ensure PIXI is ready
-    requestAnimationFrame(initializeGraphics);
+    app.renderer.on('render', () => {
+      if (!isInitialized) {
+        initialize();
+      }
+    });
 
     return () => {
       pointsRef.current.forEach(point => {
@@ -128,11 +125,7 @@ export const usePitchEditor = ({ width, height }: UsePitchEditorProps) => {
       }
 
       if (appRef.current) {
-        try {
-          appRef.current.destroy(true);
-        } catch (error) {
-          console.error('Error during PIXI application cleanup:', error);
-        }
+        appRef.current.destroy(true);
         appRef.current = null;
       }
 
@@ -141,7 +134,7 @@ export const usePitchEditor = ({ width, height }: UsePitchEditorProps) => {
         canvasRef.current = null;
       }
     };
-  }, [width, height, initializeGraphics]);
+  }, [width, height, initialize, isInitialized]);
 
   return {
     containerRef,

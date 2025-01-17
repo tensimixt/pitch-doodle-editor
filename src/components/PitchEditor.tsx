@@ -26,7 +26,6 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
 
-      // Scale coordinates based on device pixel ratio
       const scale = window.devicePixelRatio || 1;
       const scaledX = x * scale;
       const scaledY = y * scale;
@@ -41,7 +40,6 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
         point.sprite.tint = 0x2563EB;
       } else if (pointsRef.current.length < 10) {
         createPoint(scaledX, scaledY);
-        drawCurve();
       }
     };
 

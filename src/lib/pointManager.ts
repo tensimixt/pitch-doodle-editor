@@ -7,13 +7,10 @@ export interface Point {
 }
 
 export const createPointSprite = (app: PIXI.Application, x: number, y: number): Point => {
-  if (!app || !app.renderer) {
-    throw new Error('PIXI Application or renderer not initialized');
-  }
-
   const graphics = new PIXI.Graphics();
-  graphics.beginFill(0x3B82F6);
-  graphics.drawCircle(0, 0, 6);
+  graphics.beginFill(0xFFFFFF);
+  graphics.lineStyle(2, 0x3B82F6);
+  graphics.drawCircle(0, 0, 8);
   graphics.endFill();
 
   const texture = app.renderer.generateTexture(graphics);
