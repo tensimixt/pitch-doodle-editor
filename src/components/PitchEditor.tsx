@@ -26,7 +26,7 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Create and configure canvas first
+    // Create canvas first
     const canvas = document.createElement('canvas');
     canvas.style.width = `${width}px`;
     canvas.style.height = `${height}px`;
@@ -149,19 +149,20 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
     const app = appRef.current;
     if (!isInitialized || !app || !app.view) return;
 
-    app.view.addEventListener('mousedown', handleMouseDown);
-    app.view.addEventListener('mousemove', handleMouseMove);
-    app.view.addEventListener('mouseup', handleMouseUp);
+    const view = app.view;
+    view.addEventListener('mousedown', handleMouseDown);
+    view.addEventListener('mousemove', handleMouseMove);
+    view.addEventListener('mouseup', handleMouseUp);
 
     // Create initial points after initialization
     createPoint(50, height / 2);
     createPoint(width - 50, height / 2);
 
     return () => {
-      if (app.view) {
-        app.view.removeEventListener('mousedown', handleMouseDown);
-        app.view.removeEventListener('mousemove', handleMouseMove);
-        app.view.removeEventListener('mouseup', handleMouseUp);
+      if (view) {
+        view.removeEventListener('mousedown', handleMouseDown);
+        view.removeEventListener('mousemove', handleMouseMove);
+        view.removeEventListener('mouseup', handleMouseUp);
       }
     };
   }, [isInitialized, height, width]);
