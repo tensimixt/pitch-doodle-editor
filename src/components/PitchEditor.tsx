@@ -35,11 +35,11 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
 
     // Initialize PIXI Application with the canvas
     const app = new PIXI.Application({
+      view: canvas,
       width: canvas.width,
       height: canvas.height,
       backgroundColor: 0x1F2937,
       antialias: true,
-      view: canvas,
       resolution: window.devicePixelRatio || 1,
       autoDensity: true,
     });
@@ -66,30 +66,18 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
 
     // Cleanup function
     return () => {
-      if (app.view) {
+      if (app && app.view) {
         app.view.removeEventListener('mousedown', handleMouseDown);
         app.view.removeEventListener('mousemove', handleMouseMove);
         app.view.removeEventListener('mouseup', handleMouseUp);
-        containerRef.current?.removeChild(app.view);
+        if (containerRef.current && containerRef.current.contains(app.view)) {
+          containerRef.current.removeChild(app.view);
+        }
       }
       app.destroy(true, { children: true });
       appRef.current = null;
     };
   }, [width, height]);
-
-  // Add event listeners and initial points after initialization
-  useEffect(() => {
-    if (!isInitialized || !appRef.current || !appRef.current.view) return;
-
-    const view = appRef.current.view;
-    view.addEventListener('mousedown', handleMouseDown);
-    view.addEventListener('mousemove', handleMouseMove);
-    view.addEventListener('mouseup', handleMouseUp);
-
-    // Create initial points after initialization
-    createPoint(50, height / 2);
-    createPoint(width - 50, height / 2);
-  }, [isInitialized, height, width]);
 
   const drawGrid = () => {
     if (!gridGraphicsRef.current) return;
@@ -155,6 +143,28 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
       graphics.lineTo(curvePoints[i].x, curvePoints[i].y);
     }
   };
+
+  // Add event listeners and initial points after initialization
+  useEffect(() => {
+    const app = appRef.current;
+    if (!isInitialized || !app || !app.view) return;
+
+    app.view.addEventListener('mousedown', handleMouseDown);
+    app.view.addEventListener('mousemove', handleMouseMove);
+    app.view.addEventListener('mouseup', handleMouseUp);
+
+    // Create initial points after initialization
+    createPoint(50, height / 2);
+    createPoint(width - 50, height / 2);
+
+    return () => {
+      if (app.view) {
+        app.view.removeEventListener('mousedown', handleMouseDown);
+        app.view.removeEventListener('mousemove', handleMouseMove);
+        app.view.removeEventListener('mouseup', handleMouseUp);
+      }
+    };
+  }, [isInitialized, height, width]);
 
   const handleMouseDown = (event: MouseEvent) => {
     if (!appRef.current || !appRef.current.view || !isInitialized) return;
