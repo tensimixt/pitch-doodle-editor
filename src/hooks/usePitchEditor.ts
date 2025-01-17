@@ -73,6 +73,25 @@ export const usePitchEditor = ({ width, height }: UsePitchEditorProps) => {
     }
   }, [drawCurve]);
 
+  const initializeGraphics = useCallback(() => {
+    if (!appRef.current || isInitialized) return;
+
+    const lineGraphics = new PIXI.Graphics();
+    const gridGraphics = new PIXI.Graphics();
+    appRef.current.stage.addChild(gridGraphics);
+    appRef.current.stage.addChild(lineGraphics);
+    lineGraphicsRef.current = lineGraphics;
+    gridGraphicsRef.current = gridGraphics;
+
+    drawGrid();
+    
+    const scale = window.devicePixelRatio || 1;
+    createPoint(50 * scale, (height / 2) * scale);
+    createPoint((width - 50) * scale, (height / 2) * scale);
+    
+    setIsInitialized(true);
+  }, [width, height, drawGrid, createPoint, isInitialized]);
+
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -84,23 +103,8 @@ export const usePitchEditor = ({ width, height }: UsePitchEditorProps) => {
     const app = createPixiApp(canvas);
     appRef.current = app;
 
-    app.renderer.on('postrender', () => {
-      if (!isInitialized) {
-        const lineGraphics = new PIXI.Graphics();
-        const gridGraphics = new PIXI.Graphics();
-        app.stage.addChild(gridGraphics);
-        app.stage.addChild(lineGraphics);
-        lineGraphicsRef.current = lineGraphics;
-        gridGraphicsRef.current = gridGraphics;
-
-        drawGrid();
-        setIsInitialized(true);
-
-        // Create initial points after initialization
-        createPoint(50 * scale, (height / 2) * scale);
-        createPoint((width - 50) * scale, (height / 2) * scale);
-      }
-    });
+    // Use requestAnimationFrame to ensure PIXI is ready
+    requestAnimationFrame(initializeGraphics);
 
     return () => {
       pointsRef.current.forEach(point => {
@@ -137,7 +141,7 @@ export const usePitchEditor = ({ width, height }: UsePitchEditorProps) => {
         canvasRef.current = null;
       }
     };
-  }, [width, height, createPoint, drawGrid, isInitialized]);
+  }, [width, height, initializeGraphics]);
 
   return {
     containerRef,
