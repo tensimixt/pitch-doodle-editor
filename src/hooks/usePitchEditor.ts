@@ -24,17 +24,18 @@ export const usePitchEditor = ({ width, height }: UsePitchEditorProps) => {
     if (!gridGraphicsRef.current) return;
 
     const graphics = gridGraphicsRef.current;
+    const scale = window.devicePixelRatio || 1;
     graphics.clear();
     graphics.lineStyle(1, 0x374151, 0.3);
 
-    for (let x = 0; x <= width; x += 50) {
+    for (let x = 0; x <= width * scale; x += 50 * scale) {
       graphics.moveTo(x, 0);
-      graphics.lineTo(x, height);
+      graphics.lineTo(x, height * scale);
     }
 
-    for (let y = 0; y <= height; y += 50) {
+    for (let y = 0; y <= height * scale; y += 50 * scale) {
       graphics.moveTo(0, y);
-      graphics.lineTo(width, y);
+      graphics.lineTo(width * scale, y);
     }
   };
 
@@ -72,7 +73,8 @@ export const usePitchEditor = ({ width, height }: UsePitchEditorProps) => {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const canvas = setupCanvas(width, height);
+    const scale = window.devicePixelRatio || 1;
+    const canvas = setupCanvas(width * scale, height * scale);
     canvasRef.current = canvas;
     containerRef.current.appendChild(canvas);
 
@@ -92,8 +94,9 @@ export const usePitchEditor = ({ width, height }: UsePitchEditorProps) => {
       setIsInitialized(true);
 
       // Create initial points after initialization
-      createPoint(50, height / 2);
-      createPoint(width - 50, height / 2);
+      const scale = window.devicePixelRatio || 1;
+      createPoint(50 * scale, (height / 2) * scale);
+      createPoint((width - 50) * scale, (height / 2) * scale);
     });
 
     return () => {

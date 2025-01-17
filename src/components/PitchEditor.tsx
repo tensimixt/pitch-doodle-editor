@@ -26,8 +26,13 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
 
+      // Scale coordinates based on device pixel ratio
+      const scale = window.devicePixelRatio || 1;
+      const scaledX = x * scale;
+      const scaledY = y * scale;
+
       const point = pointsRef.current.find(p => 
-        Math.abs(p.x - x) < 10 && Math.abs(p.y - y) < 10
+        Math.abs(p.x - scaledX) < 10 && Math.abs(p.y - scaledY) < 10
       );
 
       if (point) {
@@ -35,7 +40,8 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
         selectedPointRef.current = point;
         point.sprite.tint = 0x2563EB;
       } else if (pointsRef.current.length < 10) {
-        createPoint(x, y);
+        createPoint(scaledX, scaledY);
+        drawCurve();
       }
     };
 
@@ -43,11 +49,12 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
       if (!isDraggingRef.current || !selectedPointRef.current || !canvasRef.current) return;
 
       const rect = canvasRef.current.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
+      const scale = window.devicePixelRatio || 1;
+      const x = (event.clientX - rect.left) * scale;
+      const y = (event.clientY - rect.top) * scale;
 
-      selectedPointRef.current.x = Math.max(0, Math.min(width, x));
-      selectedPointRef.current.y = Math.max(0, Math.min(height, y));
+      selectedPointRef.current.x = Math.max(0, Math.min(width * scale, x));
+      selectedPointRef.current.y = Math.max(0, Math.min(height * scale, y));
       selectedPointRef.current.sprite.x = selectedPointRef.current.x;
       selectedPointRef.current.sprite.y = selectedPointRef.current.y;
 
@@ -64,15 +71,15 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
     };
 
     canvasRef.current.addEventListener('mousedown', handleMouseDown);
-    canvasRef.current.addEventListener('mousemove', handleMouseMove);
-    canvasRef.current.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
 
     return () => {
       if (canvasRef.current) {
         canvasRef.current.removeEventListener('mousedown', handleMouseDown);
-        canvasRef.current.removeEventListener('mousemove', handleMouseMove);
-        canvasRef.current.removeEventListener('mouseup', handleMouseUp);
       }
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
     };
   }, [width, height, isInitialized, createPoint, drawCurve]);
 
