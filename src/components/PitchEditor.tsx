@@ -25,19 +25,21 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Create PixiJS application with proper initialization
+    // Initialize PIXI Application with proper settings
     const app = new PIXI.Application({
       width,
       height,
       backgroundColor: 0x1F2937,
       antialias: true,
       resolution: window.devicePixelRatio || 1,
+      autoDensity: true,
     });
 
-    // Properly append the canvas element
-    const canvas = app.view as HTMLCanvasElement;
-    containerRef.current.appendChild(canvas);
+    // Store the app reference
     appRef.current = app;
+
+    // Create and append the canvas
+    containerRef.current.appendChild(app.view as HTMLCanvasElement);
 
     // Create graphics for lines and grid
     const lineGraphics = new PIXI.Graphics();
@@ -47,20 +49,28 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
     lineGraphicsRef.current = lineGraphics;
     gridGraphicsRef.current = gridGraphics;
 
-    // Draw grid
+    // Draw initial grid
     drawGrid();
 
     // Event listeners
+    const canvas = app.view as HTMLCanvasElement;
     canvas.addEventListener('mousedown', handleMouseDown);
     canvas.addEventListener('mousemove', handleMouseMove);
     canvas.addEventListener('mouseup', handleMouseUp);
 
     // Cleanup function
     return () => {
-      canvas.removeEventListener('mousedown', handleMouseDown);
-      canvas.removeEventListener('mousemove', handleMouseMove);
-      canvas.removeEventListener('mouseup', handleMouseUp);
-      app.destroy(true);
+      if (canvas) {
+        canvas.removeEventListener('mousedown', handleMouseDown);
+        canvas.removeEventListener('mousemove', handleMouseMove);
+        canvas.removeEventListener('mouseup', handleMouseUp);
+      }
+      
+      if (appRef.current) {
+        appRef.current.destroy(true, { children: true });
+        appRef.current = null;
+      }
+
       if (containerRef.current && canvas.parentNode === containerRef.current) {
         containerRef.current.removeChild(canvas);
       }
