@@ -26,7 +26,11 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Initialize PIXI Application with proper settings
+    // Create canvas element first
+    const canvas = document.createElement('canvas');
+    canvasRef.current = canvas;
+
+    // Initialize PIXI Application with proper settings and the created canvas
     const app = new PIXI.Application({
       width,
       height,
@@ -34,14 +38,14 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
       antialias: true,
       resolution: window.devicePixelRatio || 1,
       autoDensity: true,
+      view: canvas,
     });
 
-    // Store references
+    // Store app reference
     appRef.current = app;
-    canvasRef.current = app.view as HTMLCanvasElement;
 
-    // Create and append the canvas
-    containerRef.current.appendChild(canvasRef.current);
+    // Append canvas to container
+    containerRef.current.appendChild(canvas);
 
     // Create graphics for lines and grid
     const lineGraphics = new PIXI.Graphics();
@@ -55,27 +59,23 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
     drawGrid();
 
     // Event listeners
-    if (canvasRef.current) {
-      canvasRef.current.addEventListener('mousedown', handleMouseDown);
-      canvasRef.current.addEventListener('mousemove', handleMouseMove);
-      canvasRef.current.addEventListener('mouseup', handleMouseUp);
-    }
+    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseup', handleMouseUp);
 
     // Cleanup function
     return () => {
-      if (canvasRef.current) {
-        canvasRef.current.removeEventListener('mousedown', handleMouseDown);
-        canvasRef.current.removeEventListener('mousemove', handleMouseMove);
-        canvasRef.current.removeEventListener('mouseup', handleMouseUp);
-      }
+      canvas.removeEventListener('mousedown', handleMouseDown);
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('mouseup', handleMouseUp);
       
       if (appRef.current) {
         appRef.current.destroy(true, { children: true });
         appRef.current = null;
       }
 
-      if (containerRef.current && canvasRef.current) {
-        containerRef.current.removeChild(canvasRef.current);
+      if (containerRef.current && canvas) {
+        containerRef.current.removeChild(canvas);
         canvasRef.current = null;
       }
     };
