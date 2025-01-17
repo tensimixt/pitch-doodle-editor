@@ -80,10 +80,13 @@ export const usePitchEditor = ({ width, height }: UsePitchEditorProps) => {
     drawGrid();
     
     const scale = window.devicePixelRatio || 1;
-    createPoint(50 * scale, (height / 2) * scale);
-    createPoint((width - 50) * scale, (height / 2) * scale);
+    // Delay initial point creation to ensure PIXI is ready
+    setTimeout(() => {
+      createPoint(50 * scale, (height / 2) * scale);
+      createPoint((width - 50) * scale, (height / 2) * scale);
+      setIsInitialized(true);
+    }, 0);
     
-    setIsInitialized(true);
   }, [width, height, drawGrid, createPoint, isInitialized]);
 
   useEffect(() => {

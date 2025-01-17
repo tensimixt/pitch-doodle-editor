@@ -13,8 +13,9 @@ export const createPointSprite = (app: PIXI.Application, x: number, y: number): 
   graphics.drawCircle(0, 0, 8);
   graphics.endFill();
 
+  // Generate texture using the app's renderer
   const texture = app.renderer.generateTexture(graphics);
-  const sprite = new PIXI.Sprite(texture);
+  const sprite = PIXI.Sprite.from(texture);
   
   sprite.anchor.set(0.5);
   sprite.x = x;
