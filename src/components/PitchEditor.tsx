@@ -58,6 +58,10 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
     // Draw initial grid
     drawGrid();
 
+    // Create initial points
+    createPoint(50, height / 2);
+    createPoint(width - 50, height / 2);
+
     // Event listeners
     canvas.addEventListener('mousedown', handleMouseDown);
     canvas.addEventListener('mousemove', handleMouseMove);
@@ -104,13 +108,15 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
   const createPoint = (x: number, y: number) => {
     if (!appRef.current) return;
 
-    const texture = PIXI.Texture.from('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoV2luZG93cykiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6ODM1RTg1NDJCQzhFMTFFNjk0NjFBNjZEN0RFRjFGREIiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6ODM1RTg1NDNCQzhFMTFFNjk0NjFBNjZEN0RFRjFGREIiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo4MzVFODU0MEJDOEUxMUU2OTQ2MUE2NkQ3REVGMUZEQiIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo4MzVFODU0MUJDOEUxMUU2OTQ2MUE2NkQ3REVGMUZEQiIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PsQ6PpgAAADWSURBVHjaYvz//z8DCDAyMjIwMQABCwMI/GVg4AFiRqACXiDmBGJWIGYHYlYgZgFiFiBmBmImIGYEYgYgZgBiBiAGKWACKQAp+AfE/6DiQPwXiP8A8W8g/gXEP4H4BxB/B+JvQPwViL8A8Wcg/gTEH4H4AxC/B+J3QPwWiN8A8SsgfgnEL4D4GRA/AeJHQPwQiB8A8X0gvgfEd4H4DhDfBuJbQHwTiG8A8XUgvgbEV4H4ChBfBuJLQHwRiC8A8XkgPgfEZ4H4DBCfBuJTQHwSiE8A8XEgPgYQYACL+jz1pFSYJQAAAABJRU5ErkJggg==');
+    const circle = new PIXI.Graphics();
+    circle.beginFill(0x3B82F6);
+    circle.drawCircle(0, 0, 6);
+    circle.endFill();
+    
+    const texture = appRef.current.renderer.generateTexture(circle);
     const sprite = new PIXI.Sprite(texture);
     
     sprite.anchor.set(0.5);
-    sprite.width = 8;
-    sprite.height = 8;
-    sprite.tint = 0xFFFFFF;
     sprite.x = x;
     sprite.y = y;
     sprite.interactive = true;
@@ -153,13 +159,14 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
 
     // Check if clicked on existing point
     const point = pointsRef.current.find(p => 
-      Math.abs(p.x - x) < 5 && Math.abs(p.y - y) < 5
+      Math.abs(p.x - x) < 10 && Math.abs(p.y - y) < 10
     );
 
     if (point) {
       isDraggingRef.current = true;
       selectedPointRef.current = point;
-    } else {
+      point.sprite.tint = 0x2563EB;
+    } else if (pointsRef.current.length < 10) { // Limit max points
       createPoint(x, y);
     }
   };
@@ -177,15 +184,20 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
     selectedPointRef.current.sprite.x = selectedPointRef.current.x;
     selectedPointRef.current.sprite.y = selectedPointRef.current.y;
 
+    // Sort points by x coordinate
+    pointsRef.current.sort((a, b) => a.x - b.x);
     drawCurve();
   };
 
   const handleMouseUp = () => {
+    if (selectedPointRef.current) {
+      selectedPointRef.current.sprite.tint = 0xFFFFFF;
+    }
     isDraggingRef.current = false;
     selectedPointRef.current = null;
   };
 
-  return <div ref={containerRef} className="rounded-lg overflow-hidden" />;
+  return <div ref={containerRef} className="rounded-lg overflow-hidden border border-gray-700" />;
 };
 
 export default PitchEditor;
