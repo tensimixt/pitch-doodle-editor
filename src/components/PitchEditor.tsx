@@ -21,16 +21,12 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
   const gridGraphicsRef = useRef<PIXI.Graphics | null>(null);
   const isDraggingRef = useRef<boolean>(false);
   const selectedPointRef = useRef<Point | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Create canvas element first
-    const canvas = document.createElement('canvas');
-    canvasRef.current = canvas;
-
-    // Initialize PIXI Application with proper settings and the created canvas
+    // Initialize PIXI Application
     const app = new PIXI.Application({
       width,
       height,
@@ -38,14 +34,13 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
       antialias: true,
       resolution: window.devicePixelRatio || 1,
       autoDensity: true,
-      view: canvas,
     });
 
     // Store app reference
     appRef.current = app;
 
     // Append canvas to container
-    containerRef.current.appendChild(canvas);
+    containerRef.current.appendChild(app.view as HTMLCanvasElement);
 
     // Create graphics for lines and grid
     const lineGraphics = new PIXI.Graphics();
@@ -58,32 +53,38 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
     // Draw initial grid
     drawGrid();
 
-    // Create initial points
-    createPoint(50, height / 2);
-    createPoint(width - 50, height / 2);
-
-    // Event listeners
-    canvas.addEventListener('mousedown', handleMouseDown);
-    canvas.addEventListener('mousemove', handleMouseMove);
-    canvas.addEventListener('mouseup', handleMouseUp);
+    // Set initialization flag
+    setIsInitialized(true);
 
     // Cleanup function
     return () => {
-      canvas.removeEventListener('mousedown', handleMouseDown);
-      canvas.removeEventListener('mousemove', handleMouseMove);
-      canvas.removeEventListener('mouseup', handleMouseUp);
-      
       if (appRef.current) {
+        // Remove event listeners first
+        const view = appRef.current.view as HTMLCanvasElement;
+        view.removeEventListener('mousedown', handleMouseDown);
+        view.removeEventListener('mousemove', handleMouseMove);
+        view.removeEventListener('mouseup', handleMouseUp);
+
+        // Destroy the application
         appRef.current.destroy(true, { children: true });
         appRef.current = null;
       }
-
-      if (containerRef.current && canvas) {
-        containerRef.current.removeChild(canvas);
-        canvasRef.current = null;
-      }
     };
   }, [width, height]);
+
+  // Add event listeners after initialization
+  useEffect(() => {
+    if (!isInitialized || !appRef.current) return;
+
+    const view = appRef.current.view as HTMLCanvasElement;
+    view.addEventListener('mousedown', handleMouseDown);
+    view.addEventListener('mousemove', handleMouseMove);
+    view.addEventListener('mouseup', handleMouseUp);
+
+    // Create initial points after initialization
+    createPoint(50, height / 2);
+    createPoint(width - 50, height / 2);
+  }, [isInitialized]);
 
   const drawGrid = () => {
     if (!gridGraphicsRef.current) return;
@@ -106,7 +107,7 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
   };
 
   const createPoint = (x: number, y: number) => {
-    if (!appRef.current) return;
+    if (!appRef.current || !isInitialized) return;
 
     const circle = new PIXI.Graphics();
     circle.beginFill(0x3B82F6);
@@ -151,9 +152,9 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
   };
 
   const handleMouseDown = (event: MouseEvent) => {
-    if (!appRef.current || !canvasRef.current) return;
+    if (!appRef.current || !isInitialized) return;
 
-    const rect = canvasRef.current.getBoundingClientRect();
+    const rect = (appRef.current.view as HTMLCanvasElement).getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
