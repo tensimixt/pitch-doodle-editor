@@ -70,15 +70,31 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
     createPoint(50, height / 2);
     createPoint(width - 50, height / 2);
 
+    // Add event listeners
+    const handleMouseDownWrapper = (e: MouseEvent) => handleMouseDown(e);
+    const handleMouseMoveWrapper = (e: MouseEvent) => handleMouseMove(e);
+    const handleMouseUpWrapper = () => handleMouseUp();
+
+    canvas.addEventListener('mousedown', handleMouseDownWrapper);
+    canvas.addEventListener('mousemove', handleMouseMoveWrapper);
+    canvas.addEventListener('mouseup', handleMouseUpWrapper);
+
     // Cleanup function
     return () => {
+      // Remove event listeners
+      canvas.removeEventListener('mousedown', handleMouseDownWrapper);
+      canvas.removeEventListener('mousemove', handleMouseMoveWrapper);
+      canvas.removeEventListener('mouseup', handleMouseUpWrapper);
+
+      // Cleanup PIXI application
       if (appRef.current) {
-        const currentApp = appRef.current;
-        if (canvasRef.current && containerRef.current && containerRef.current.contains(canvasRef.current)) {
-          containerRef.current.removeChild(canvasRef.current);
-        }
-        currentApp.destroy(true, { children: true });
+        appRef.current.destroy(true, { children: true });
         appRef.current = null;
+      }
+
+      // Remove canvas from container
+      if (canvasRef.current && containerRef.current) {
+        containerRef.current.removeChild(canvasRef.current);
         canvasRef.current = null;
       }
     };
@@ -172,9 +188,9 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
   }, [isInitialized]);
 
   const handleMouseDown = (event: MouseEvent) => {
-    if (!appRef.current || !appRef.current.view || !isInitialized) return;
+    if (!canvasRef.current) return;
 
-    const rect = appRef.current.view.getBoundingClientRect();
+    const rect = canvasRef.current.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
@@ -193,9 +209,9 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
   };
 
   const handleMouseMove = (event: MouseEvent) => {
-    if (!isDraggingRef.current || !selectedPointRef.current || !appRef.current?.view) return;
+    if (!isDraggingRef.current || !selectedPointRef.current || !canvasRef.current) return;
 
-    const rect = appRef.current.view.getBoundingClientRect();
+    const rect = canvasRef.current.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
