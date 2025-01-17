@@ -121,7 +121,7 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
   };
 
   const createPoint = (x: number, y: number) => {
-    if (!appRef.current || !isInitialized) return;
+    if (!appRef.current || !isInitialized || !appRef.current.renderer) return;
 
     const circle = new PIXI.Graphics();
     circle.beginFill(0x3B82F6);
@@ -164,28 +164,6 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
       graphics.lineTo(curvePoints[i].x, curvePoints[i].y);
     }
   };
-
-  useEffect(() => {
-    if (!isInitialized || !appRef.current || !canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    
-    const handleMouseDownWrapper = (e: MouseEvent) => handleMouseDown(e);
-    const handleMouseMoveWrapper = (e: MouseEvent) => handleMouseMove(e);
-    const handleMouseUpWrapper = (e: MouseEvent) => handleMouseUp();
-
-    canvas.addEventListener('mousedown', handleMouseDownWrapper);
-    canvas.addEventListener('mousemove', handleMouseMoveWrapper);
-    canvas.addEventListener('mouseup', handleMouseUpWrapper);
-
-    return () => {
-      if (canvas) {
-        canvas.removeEventListener('mousedown', handleMouseDownWrapper);
-        canvas.removeEventListener('mousemove', handleMouseMoveWrapper);
-        canvas.removeEventListener('mouseup', handleMouseUpWrapper);
-      }
-    };
-  }, [isInitialized]);
 
   const handleMouseDown = (event: MouseEvent) => {
     if (!canvasRef.current) return;
