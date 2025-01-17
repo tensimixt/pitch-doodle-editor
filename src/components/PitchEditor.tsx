@@ -22,16 +22,21 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
   const isDraggingRef = useRef<boolean>(false);
   const selectedPointRef = useRef<Point | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Create canvas first
+    // Create and configure canvas
     const canvas = document.createElement('canvas');
+    canvasRef.current = canvas;
     canvas.style.width = `${width}px`;
     canvas.style.height = `${height}px`;
     canvas.width = width * window.devicePixelRatio;
     canvas.height = height * window.devicePixelRatio;
+
+    // Append canvas to container first
+    containerRef.current.appendChild(canvas);
 
     // Initialize PIXI Application with the canvas
     const app = new PIXI.Application({
@@ -43,9 +48,6 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
       resolution: window.devicePixelRatio || 1,
       autoDensity: true,
     });
-
-    // Append canvas to container before storing app reference
-    containerRef.current.appendChild(canvas);
 
     // Store app reference
     appRef.current = app;
@@ -66,12 +68,14 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
 
     // Cleanup function
     return () => {
-      if (app) {
-        if (containerRef.current && canvas.parentNode === containerRef.current) {
-          containerRef.current.removeChild(canvas);
+      if (appRef.current) {
+        const currentApp = appRef.current;
+        if (canvasRef.current && containerRef.current && containerRef.current.contains(canvasRef.current)) {
+          containerRef.current.removeChild(canvasRef.current);
         }
-        app.destroy(true, { children: true });
+        currentApp.destroy(true, { children: true });
         appRef.current = null;
+        canvasRef.current = null;
       }
     };
   }, [width, height]);
@@ -142,10 +146,9 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
   };
 
   useEffect(() => {
-    const app = appRef.current;
-    if (!isInitialized || !app || !app.view) return;
+    if (!isInitialized || !appRef.current || !canvasRef.current) return;
 
-    const canvas = app.view as HTMLCanvasElement;
+    const canvas = canvasRef.current;
     
     const handleMouseDownWrapper = (e: MouseEvent) => handleMouseDown(e);
     const handleMouseMoveWrapper = (e: MouseEvent) => handleMouseMove(e);
@@ -160,9 +163,11 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
     createPoint(width - 50, height / 2);
 
     return () => {
-      canvas.removeEventListener('mousedown', handleMouseDownWrapper);
-      canvas.removeEventListener('mousemove', handleMouseMoveWrapper);
-      canvas.removeEventListener('mouseup', handleMouseUpWrapper);
+      if (canvas) {
+        canvas.removeEventListener('mousedown', handleMouseDownWrapper);
+        canvas.removeEventListener('mousemove', handleMouseMoveWrapper);
+        canvas.removeEventListener('mouseup', handleMouseUpWrapper);
+      }
     };
   }, [isInitialized, height, width]);
 
