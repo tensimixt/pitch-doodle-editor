@@ -86,9 +86,26 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
       canvas.removeEventListener('mousemove', handleMouseMoveWrapper);
       canvas.removeEventListener('mouseup', handleMouseUpWrapper);
 
-      // Cleanup PIXI application
+      // Clean up PIXI resources
       if (appRef.current) {
-        appRef.current.destroy(true, { children: true });
+        pointsRef.current.forEach(point => {
+          if (point.sprite) {
+            point.sprite.destroy();
+          }
+        });
+        pointsRef.current = [];
+        
+        if (lineGraphicsRef.current) {
+          lineGraphicsRef.current.destroy();
+          lineGraphicsRef.current = null;
+        }
+        
+        if (gridGraphicsRef.current) {
+          gridGraphicsRef.current.destroy();
+          gridGraphicsRef.current = null;
+        }
+
+        appRef.current.destroy(true, { children: true, texture: true, baseTexture: true });
         appRef.current = null;
       }
 
