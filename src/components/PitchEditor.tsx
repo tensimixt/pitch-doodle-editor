@@ -57,11 +57,16 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
   const createPoint = (x: number, y: number) => {
     if (!appRef.current || !isInitialized) return;
 
-    const point = createPointSprite(appRef.current, x, y);
-    pointsRef.current.push(point);
-    pointsRef.current.sort((a, b) => a.x - b.x);
-    drawCurve();
-    return point;
+    try {
+      const point = createPointSprite(appRef.current, x, y);
+      pointsRef.current.push(point);
+      pointsRef.current.sort((a, b) => a.x - b.x);
+      drawCurve();
+      return point;
+    } catch (error) {
+      console.error('Error creating point:', error);
+      return null;
+    }
   };
 
   useEffect(() => {
@@ -74,15 +79,22 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
     const app = createPixiApp(canvas);
     appRef.current = app;
 
-    const lineGraphics = new PIXI.Graphics();
-    const gridGraphics = new PIXI.Graphics();
-    app.stage.addChild(gridGraphics);
-    app.stage.addChild(lineGraphics);
-    lineGraphicsRef.current = lineGraphics;
-    gridGraphicsRef.current = gridGraphics;
+    // Wait for the next frame to ensure PIXI is fully initialized
+    requestAnimationFrame(() => {
+      const lineGraphics = new PIXI.Graphics();
+      const gridGraphics = new PIXI.Graphics();
+      app.stage.addChild(gridGraphics);
+      app.stage.addChild(lineGraphics);
+      lineGraphicsRef.current = lineGraphics;
+      gridGraphicsRef.current = gridGraphics;
 
-    drawGrid();
-    setIsInitialized(true);
+      drawGrid();
+      setIsInitialized(true);
+
+      // Create initial points after initialization
+      createPoint(50, height / 2);
+      createPoint(width - 50, height / 2);
+    });
 
     const handleMouseDown = (event: MouseEvent) => {
       if (!canvasRef.current) return;
@@ -131,9 +143,6 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
     canvas.addEventListener('mousedown', handleMouseDown);
     canvas.addEventListener('mousemove', handleMouseMove);
     canvas.addEventListener('mouseup', handleMouseUp);
-
-    createPoint(50, height / 2);
-    createPoint(width - 50, height / 2);
 
     return () => {
       if (canvas) {

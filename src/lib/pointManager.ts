@@ -7,13 +7,24 @@ export interface Point {
 }
 
 export const createPointSprite = (app: PIXI.Application, x: number, y: number): Point => {
+  if (!app || !app.renderer) {
+    throw new Error('PIXI Application or renderer not initialized');
+  }
+
   const circle = new PIXI.Graphics();
   circle.beginFill(0x3B82F6);
   circle.drawCircle(0, 0, 6);
   circle.endFill();
   
-  const texture = app.renderer.generateTexture(circle);
-  const sprite = new PIXI.Sprite(texture);
+  // Use render texture instead of generateTexture
+  const renderTexture = PIXI.RenderTexture.create({
+    width: 12,
+    height: 12,
+    resolution: window.devicePixelRatio || 1
+  });
+  
+  app.renderer.render(circle, { renderTexture });
+  const sprite = new PIXI.Sprite(renderTexture);
   
   sprite.anchor.set(0.5);
   sprite.x = x;
@@ -22,6 +33,7 @@ export const createPointSprite = (app: PIXI.Application, x: number, y: number): 
   sprite.cursor = 'pointer';
 
   app.stage.addChild(sprite);
+  circle.destroy();
 
   return { x, y, sprite };
 };
