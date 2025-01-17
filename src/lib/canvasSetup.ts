@@ -4,8 +4,8 @@ export const setupCanvas = (width: number, height: number): HTMLCanvasElement =>
   const canvas = document.createElement('canvas');
   canvas.style.width = `${width}px`;
   canvas.style.height = `${height}px`;
-  canvas.width = width * (window.devicePixelRatio || 1);
-  canvas.height = height * (window.devicePixelRatio || 1);
+  canvas.width = width;
+  canvas.height = height;
   return canvas;
 };
 

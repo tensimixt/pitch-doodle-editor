@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import * as PIXI from 'pixi.js';
 import { setupCanvas, createPixiApp } from '@/lib/canvasSetup';
 import { Point, createPointSprite } from '@/lib/pointManager';
@@ -20,8 +20,8 @@ export const usePitchEditor = ({ width, height }: UsePitchEditorProps) => {
   const [isInitialized, setIsInitialized] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const drawGrid = () => {
-    if (!gridGraphicsRef.current) return;
+  const drawGrid = useCallback(() => {
+    if (!gridGraphicsRef.current || !appRef.current) return;
 
     const graphics = gridGraphicsRef.current;
     const scale = window.devicePixelRatio || 1;
@@ -37,9 +37,9 @@ export const usePitchEditor = ({ width, height }: UsePitchEditorProps) => {
       graphics.moveTo(0, y);
       graphics.lineTo(width * scale, y);
     }
-  };
+  }, [width, height]);
 
-  const drawCurve = () => {
+  const drawCurve = useCallback(() => {
     if (!lineGraphicsRef.current || pointsRef.current.length < 2) return;
 
     const graphics = lineGraphicsRef.current;
@@ -53,10 +53,13 @@ export const usePitchEditor = ({ width, height }: UsePitchEditorProps) => {
     for (let i = 1; i < curvePoints.length; i++) {
       graphics.lineTo(curvePoints[i].x, curvePoints[i].y);
     }
-  };
+  }, []);
 
-  const createPoint = (x: number, y: number) => {
-    if (!appRef.current || !isInitialized) return null;
+  const createPoint = useCallback((x: number, y: number) => {
+    if (!appRef.current) {
+      console.error('PIXI Application not initialized');
+      return null;
+    }
 
     try {
       const point = createPointSprite(appRef.current, x, y);
@@ -68,7 +71,7 @@ export const usePitchEditor = ({ width, height }: UsePitchEditorProps) => {
       console.error('Error creating point:', error);
       return null;
     }
-  };
+  }, [drawCurve]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -81,22 +84,22 @@ export const usePitchEditor = ({ width, height }: UsePitchEditorProps) => {
     const app = createPixiApp(canvas);
     appRef.current = app;
 
-    // Wait for the next frame to ensure PIXI is fully initialized
-    requestAnimationFrame(() => {
-      const lineGraphics = new PIXI.Graphics();
-      const gridGraphics = new PIXI.Graphics();
-      app.stage.addChild(gridGraphics);
-      app.stage.addChild(lineGraphics);
-      lineGraphicsRef.current = lineGraphics;
-      gridGraphicsRef.current = gridGraphics;
+    app.renderer.on('postrender', () => {
+      if (!isInitialized) {
+        const lineGraphics = new PIXI.Graphics();
+        const gridGraphics = new PIXI.Graphics();
+        app.stage.addChild(gridGraphics);
+        app.stage.addChild(lineGraphics);
+        lineGraphicsRef.current = lineGraphics;
+        gridGraphicsRef.current = gridGraphics;
 
-      drawGrid();
-      setIsInitialized(true);
+        drawGrid();
+        setIsInitialized(true);
 
-      // Create initial points after initialization
-      const scale = window.devicePixelRatio || 1;
-      createPoint(50 * scale, (height / 2) * scale);
-      createPoint((width - 50) * scale, (height / 2) * scale);
+        // Create initial points after initialization
+        createPoint(50 * scale, (height / 2) * scale);
+        createPoint((width - 50) * scale, (height / 2) * scale);
+      }
     });
 
     return () => {
@@ -134,7 +137,7 @@ export const usePitchEditor = ({ width, height }: UsePitchEditorProps) => {
         canvasRef.current = null;
       }
     };
-  }, [width, height]);
+  }, [width, height, createPoint, drawGrid, isInitialized]);
 
   return {
     containerRef,

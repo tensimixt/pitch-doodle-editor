@@ -13,7 +13,7 @@ export const createPointSprite = (app: PIXI.Application, x: number, y: number): 
 
   const graphics = new PIXI.Graphics();
   graphics.beginFill(0x3B82F6);
-  graphics.drawCircle(6, 6, 6);
+  graphics.drawCircle(0, 0, 6);
   graphics.endFill();
 
   const texture = app.renderer.generateTexture(graphics);
@@ -27,7 +27,6 @@ export const createPointSprite = (app: PIXI.Application, x: number, y: number): 
 
   app.stage.addChild(sprite);
   graphics.destroy();
-  texture.destroy();
 
   return { x, y, sprite };
 };
