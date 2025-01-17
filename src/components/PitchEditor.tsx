@@ -21,6 +21,7 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
   const gridGraphicsRef = useRef<PIXI.Graphics | null>(null);
   const isDraggingRef = useRef<boolean>(false);
   const selectedPointRef = useRef<Point | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -35,11 +36,12 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
       autoDensity: true,
     });
 
-    // Store the app reference
+    // Store references
     appRef.current = app;
+    canvasRef.current = app.view as HTMLCanvasElement;
 
     // Create and append the canvas
-    containerRef.current.appendChild(app.view as HTMLCanvasElement);
+    containerRef.current.appendChild(canvasRef.current);
 
     // Create graphics for lines and grid
     const lineGraphics = new PIXI.Graphics();
@@ -53,17 +55,18 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
     drawGrid();
 
     // Event listeners
-    const canvas = app.view as HTMLCanvasElement;
-    canvas.addEventListener('mousedown', handleMouseDown);
-    canvas.addEventListener('mousemove', handleMouseMove);
-    canvas.addEventListener('mouseup', handleMouseUp);
+    if (canvasRef.current) {
+      canvasRef.current.addEventListener('mousedown', handleMouseDown);
+      canvasRef.current.addEventListener('mousemove', handleMouseMove);
+      canvasRef.current.addEventListener('mouseup', handleMouseUp);
+    }
 
     // Cleanup function
     return () => {
-      if (canvas) {
-        canvas.removeEventListener('mousedown', handleMouseDown);
-        canvas.removeEventListener('mousemove', handleMouseMove);
-        canvas.removeEventListener('mouseup', handleMouseUp);
+      if (canvasRef.current) {
+        canvasRef.current.removeEventListener('mousedown', handleMouseDown);
+        canvasRef.current.removeEventListener('mousemove', handleMouseMove);
+        canvasRef.current.removeEventListener('mouseup', handleMouseUp);
       }
       
       if (appRef.current) {
@@ -71,8 +74,9 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
         appRef.current = null;
       }
 
-      if (containerRef.current && canvas.parentNode === containerRef.current) {
-        containerRef.current.removeChild(canvas);
+      if (containerRef.current && canvasRef.current) {
+        containerRef.current.removeChild(canvasRef.current);
+        canvasRef.current = null;
       }
     };
   }, [width, height]);
@@ -141,9 +145,9 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
   };
 
   const handleMouseDown = (event: MouseEvent) => {
-    if (!appRef.current) return;
+    if (!appRef.current || !canvasRef.current) return;
 
-    const rect = (appRef.current.view as HTMLCanvasElement).getBoundingClientRect();
+    const rect = canvasRef.current.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
@@ -161,9 +165,9 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
   };
 
   const handleMouseMove = (event: MouseEvent) => {
-    if (!isDraggingRef.current || !selectedPointRef.current || !appRef.current) return;
+    if (!isDraggingRef.current || !selectedPointRef.current || !canvasRef.current) return;
 
-    const rect = (appRef.current.view as HTMLCanvasElement).getBoundingClientRect();
+    const rect = canvasRef.current.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
