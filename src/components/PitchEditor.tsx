@@ -81,35 +81,38 @@ const PitchEditor = ({ width, height }: PitchEditorProps) => {
 
     // Cleanup function
     return () => {
-      // Remove event listeners
+      // Remove event listeners first
       canvas.removeEventListener('mousedown', handleMouseDownWrapper);
       canvas.removeEventListener('mousemove', handleMouseMoveWrapper);
       canvas.removeEventListener('mouseup', handleMouseUpWrapper);
 
-      // Clean up PIXI resources
-      if (appRef.current) {
+      // Clean up PIXI resources in reverse order of creation
+      if (pointsRef.current) {
         pointsRef.current.forEach(point => {
-          if (point.sprite) {
+          if (point.sprite && !point.sprite.destroyed) {
             point.sprite.destroy();
           }
         });
         pointsRef.current = [];
-        
-        if (lineGraphicsRef.current) {
-          lineGraphicsRef.current.destroy();
-          lineGraphicsRef.current = null;
-        }
-        
-        if (gridGraphicsRef.current) {
-          gridGraphicsRef.current.destroy();
-          gridGraphicsRef.current = null;
-        }
+      }
 
+      if (lineGraphicsRef.current && !lineGraphicsRef.current.destroyed) {
+        lineGraphicsRef.current.destroy();
+        lineGraphicsRef.current = null;
+      }
+
+      if (gridGraphicsRef.current && !gridGraphicsRef.current.destroyed) {
+        gridGraphicsRef.current.destroy();
+        gridGraphicsRef.current = null;
+      }
+
+      // Destroy the PIXI application last
+      if (appRef.current && !appRef.current.destroyed) {
         appRef.current.destroy(true, { children: true, texture: true });
         appRef.current = null;
       }
 
-      // Remove canvas from container
+      // Remove canvas from container last
       if (canvasRef.current && containerRef.current) {
         containerRef.current.removeChild(canvasRef.current);
         canvasRef.current = null;
